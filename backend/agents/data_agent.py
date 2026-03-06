@@ -1,5 +1,6 @@
 """
 Data Agent Module for handling market data operations.
+Supports YFinance (HK stocks and global equities) and CCXT (crypto).
 """
 
 import time
@@ -8,14 +9,14 @@ from typing import Dict, List, Optional, Any
 import pandas as pd
 
 try:
-  import yfinance as yf
+    import yfinance as yf
 except ImportError as e:
-  print(f"Error importing yfinance: {e}")
-  print("Please ensure yfinance is installed: pip install yfinance")
-  raise
+    print(f"Error importing yfinance: {e}")
+    print("Please ensure yfinance is installed: pip install yfinance")
+    raise
 
 from . import BaseAgent
-from ..lib.indicators import (
+from ..utils.indicators import (
     calculate_macd,
     calculate_rsi,
     calculate_bollinger_bands

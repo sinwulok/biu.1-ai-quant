@@ -6,7 +6,7 @@ This module implements a trading strategy based on the MACD (Moving Average Conv
 
 from typing import Dict, Any
 from . import BaseAgent
-from ..lib.indicators import calculate_macd
+from ..utils.indicators import calculate_macd
 
 
 class MACDStrategyAgent(BaseAgent):

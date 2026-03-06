@@ -1,16 +1,22 @@
 # Core dependencies
-yfinance>=0.1.63
-pandas>=1.3.0
-numpy>=1.19.0
+yfinance>=0.2.18
+pandas>=1.5.0
+numpy>=1.23.0
 
 # API and web framework
-fastapi>=0.68.0
-uvicorn>=0.15.0
+fastapi>=0.100.0
+uvicorn>=0.23.0
+pydantic>=2.0.0
 
 # Data processing and analysis
-ta-lib>=0.4.24  # Technical analysis library
-scipy>=1.7.0    # Scientific computing
+scipy>=1.11.0
+
+# Broker integrations (optional — enable in config.py)
+# Install only what you need:
+ccxt>=4.0.0              # Crypto exchanges (CCXT data + broker)
+# ib_insync>=0.9.86      # Interactive Brokers (requires TWS/IB Gateway)
+# futu-openapi>=9.0.0    # Futu OpenD (requires OpenD daemon)
 
 # Testing and development
-pytest>=6.2.5
-pytest-cov>=2.12.1
+pytest>=7.4.0
+pytest-cov>=4.1.0
