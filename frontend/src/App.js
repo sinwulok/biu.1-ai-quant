@@ -1,107 +1,120 @@
 // src/App.js
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Dashboard from "./components/Dashboard";
 import ControlPanel from "./components/ControlPanel";
 import "./App.css";
+
+const POLL_INTERVAL_MS = 5000;
 
 function App() {
   const [systemStatus, setSystemStatus] = useState("stopped");
   const [agents, setAgents] = useState([]);
   const [trades, setTrades] = useState([]);
   const [portfolio, setPortfolio] = useState({});
+  const [simulation, setSimulation] = useState(null);
 
-  // 从API获取系统状态
-  useEffect(() => {
-    const fetchStatus = async () => {
-      try {
-        const response = await fetch("/api/system/status");
-        const data = await response.json();
-        setSystemStatus(data.status);
-        setAgents(data.agents);
-      } catch (error) {
-        console.error("Error fetching system status:", error);
-      }
-    };
-
-    fetchStatus();
-    const interval = setInterval(fetchStatus, 5000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // 从API获取交易历史
-  useEffect(() => {
-    const fetchTrades = async () => {
-      try {
-        const response = await fetch("/api/trades");
-        const data = await response.json();
-        setTrades(data);
-      } catch (error) {
-        console.error("Error fetching trades:", error);
-      }
-    };
-
-    fetchTrades();
-    const interval = setInterval(fetchTrades, 10000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // 从API获取投资组合
-  useEffect(() => {
-    const fetchPortfolio = async () => {
-      try {
-        const response = await fetch("/api/portfolio");
-        const data = await response.json();
-        setPortfolio(data);
-      } catch (error) {
-        console.error("Error fetching portfolio:", error);
-      }
-    };
-
-    fetchPortfolio();
-    const interval = setInterval(fetchPortfolio, 10000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // 启动系统
-  const handleStart = async () => {
+  // ---- data fetchers ----
+  const fetchStatus = useCallback(async () => {
     try {
-      const response = await fetch("/api/system/start", { method: "POST" });
-      const data = await response.json();
+      const res = await fetch("/api/system/status");
+      const data = await res.json();
       setSystemStatus(data.status);
-    } catch (error) {
-      console.error("Error starting system:", error);
+      setAgents(data.agents || []);
+      if (data.simulation) setSimulation(data.simulation);
+    } catch (e) {
+      console.error("fetchStatus:", e);
+    }
+  }, []);
+
+  const fetchTrades = useCallback(async () => {
+    try {
+      const res = await fetch("/api/trades");
+      setTrades(await res.json());
+    } catch (e) {
+      console.error("fetchTrades:", e);
+    }
+  }, []);
+
+  const fetchPortfolio = useCallback(async () => {
+    try {
+      const res = await fetch("/api/portfolio");
+      setPortfolio(await res.json());
+    } catch (e) {
+      console.error("fetchPortfolio:", e);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchStatus();
+    const id = setInterval(fetchStatus, POLL_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, [fetchStatus]);
+
+  useEffect(() => {
+    fetchTrades();
+    fetchPortfolio();
+    const id = setInterval(() => {
+      fetchTrades();
+      fetchPortfolio();
+    }, POLL_INTERVAL_MS * 2);
+    return () => clearInterval(id);
+  }, [fetchTrades, fetchPortfolio]);
+
+  // ---- system control ----
+  const handleStart = async (config) => {
+    try {
+      const res = await fetch("/api/system/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(config),
+      });
+      const data = await res.json();
+      setSystemStatus(data.status);
+    } catch (e) {
+      console.error("handleStart:", e);
     }
   };
 
-  // 停止系统
   const handleStop = async () => {
     try {
-      const response = await fetch("/api/system/stop", { method: "POST" });
-      const data = await response.json();
+      const res = await fetch("/api/system/stop", { method: "POST" });
+      const data = await res.json();
       setSystemStatus(data.status);
-    } catch (error) {
-      console.error("Error stopping system:", error);
+    } catch (e) {
+      console.error("handleStop:", e);
     }
   };
 
   return (
     <div className="App">
       <header className="App-header">
-        <h1>投资代理系统</h1>
+        <div>
+          <h1>🤖 biu.1 AI Quant</h1>
+          <div className="subtitle">HK Trading Simulation Platform · IBKR · FUTU · CCXT · YFinance</div>
+        </div>
         <div className="system-status">
-          系统状态:{" "}
-          <span className={`status-${systemStatus}`}>{systemStatus}</span>
+          System:{" "}
+          <span className={`status-${systemStatus}`}>{systemStatus.toUpperCase()}</span>
         </div>
       </header>
 
       <main>
-        <Dashboard trades={trades} portfolio={portfolio} agents={agents} />
+        <aside className="sidebar">
+          <ControlPanel
+            systemStatus={systemStatus}
+            agents={agents}
+            onStart={handleStart}
+            onStop={handleStop}
+          />
+        </aside>
 
-        <ControlPanel
-          systemStatus={systemStatus}
-          onStart={handleStart}
-          onStop={handleStop}
-        />
+        <div className="content">
+          <Dashboard
+            trades={trades}
+            portfolio={portfolio}
+            simulation={simulation}
+          />
+        </div>
       </main>
     </div>
   );

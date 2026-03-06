@@ -1,77 +1,70 @@
+"""
+Execution Agent
+
+Delegates order execution to the configured broker adapter.
+Supports PaperBroker (default), IBKRBroker, FUTUBroker, and CCXTBroker.
+"""
+
 from . import BaseAgent, datetime
+from ..brokers.base_broker import Order
+from ..brokers.paper_broker import PaperBroker
 
 
 class ExecutionAgent(BaseAgent):
-  def __init__(self, name, broker_api_key=None, paper_trading=True):
-    super().__init__(name)
-    self.broker_api_key = broker_api_key
-    self.paper_trading = paper_trading
-    self.orders = []
-    self.portfolio = {}
-    self.cash = 10000.0  # 初始资金（模拟）
+    """
+    Agent responsible for order execution via a pluggable broker adapter.
 
-  def run(self):
-    # 主要是响应订单请求
-    pass
+    paper_trading=True (default): uses the built-in PaperBroker.
+    Pass a broker instance via the `broker` keyword to use IBKR, FUTU, or CCXT.
+    """
 
-  def receive_message(self, message):
-    if message['type'] == 'trade_order':
-      symbol = message['payload'].get('symbol')
-      action = message['payload'].get('action')
-      quantity = message['payload'].get('quantity')
+    def __init__(self, name, broker=None, paper_trading=True):
+        super().__init__(name)
+        if broker is not None:
+            self.broker = broker
+        else:
+            self.broker = PaperBroker()
+            self.broker.connect()
+        self.paper_trading = paper_trading
 
-      if self.paper_trading:
-        # 模拟交易执行
-        self._execute_paper_trade(symbol, action, quantity)
-      else:
-        # 实际交易
-        self._execute_real_trade(symbol, action, quantity)
+    # Keep legacy attributes for API compatibility
+    @property
+    def orders(self):
+        return [o.to_dict() for o in self.broker.orders]
 
-  def _execute_paper_trade(self, symbol, action, quantity):
-    # 获取当前价格
-    self.send_message('data_agent', 'get_data', {'symbol': symbol})
-    # 这里简化了，实际上应该等待数据响应后再执行
-    # 假设价格为100
-    price = 100
+    @property
+    def portfolio(self):
+        return self.broker.get_positions()
 
-    if action == 'buy':
-      cost = price * quantity
-      if cost <= self.cash:
-        self.cash -= cost
-        self.portfolio[symbol] = self.portfolio.get(symbol, 0) + quantity
-        self.orders.append({
-            'symbol': symbol,
-            'action': 'buy',
-            'quantity': quantity,
-            'price': price,
-            'timestamp': datetime.now()
-        })
-        # 通知其他代理
-        self.send_message('all', 'trade_executed', {
-            'symbol': symbol,
-            'action': 'buy',
-            'quantity': quantity,
-            'price': price
-        })
-    elif action == 'sell':
-      if symbol in self.portfolio and self.portfolio[symbol] >= quantity:
-        self.cash += price * quantity
-        self.portfolio[symbol] -= quantity
-        self.orders.append({
-            'symbol': symbol,
-            'action': 'sell',
-            'quantity': quantity,
-            'price': price,
-            'timestamp': datetime.now()
-        })
-        # 通知其他代理
-        self.send_message('all', 'trade_executed', {
-            'symbol': symbol,
-            'action': 'sell',
-            'quantity': quantity,
-            'price': price
-        })
+    @property
+    def cash(self):
+        return self.broker.cash
 
-  def _execute_real_trade(self, symbol, action, quantity):
-    # 实现与实际经纪商API的集成
-    pass
+    def run(self):
+        pass
+
+    def receive_message(self, message):
+        if message['type'] == 'trade_order':
+            symbol = message['payload'].get('symbol')
+            action = message['payload'].get('action')
+            quantity = message['payload'].get('quantity')
+            price = message['payload'].get('price')
+
+            order = Order(
+                symbol=symbol,
+                action=action,
+                quantity=quantity,
+                broker=self.broker.name,
+            )
+            filled = self.broker.place_order(order, reference_price=price or 100.0)
+
+            if filled.status == 'filled':
+                self.send_message('all', 'trade_executed', {
+                    'symbol': symbol,
+                    'action': action,
+                    'quantity': filled.filled_quantity,
+                    'price': filled.filled_price,
+                    'broker': filled.broker,
+                    'timestamp': filled.fill_timestamp.isoformat() if filled.fill_timestamp else None,
+                })
+

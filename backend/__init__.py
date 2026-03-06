@@ -27,26 +27,26 @@ from backend.agents import (
 
 # Import packages
 from backend import agents
-from backend import lib
+from backend import utils
 from backend import api
 
 __all__ = [
     # Core packages
-    'agents', 
-    'lib', 
+    'agents',
+    'utils',
     'api',
-    
+
     # Technical indicators
     'calculate_macd',
     'calculate_rsi',
     'calculate_bollinger_bands',
-    
+
     # Analysis tools
     'calculate_returns',
     'calculate_volatility',
     'calculate_sharpe_ratio',
     'perform_backtest',
-    
+
     # Agents
     'Coordinator',
     'DataAgent',
@@ -57,10 +57,8 @@ __all__ = [
 ]
 
 # Backend version
-__version__ = '0.1.0'
+__version__ = '0.2.0'
 
 # System configurations
 DEBUG = True
 LOG_LEVEL = 'INFO'
-
-# Import commonly used components for convenience

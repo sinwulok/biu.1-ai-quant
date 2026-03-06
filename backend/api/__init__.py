@@ -4,16 +4,10 @@ SiuBiu-AI-Quant-System API Module
 This package provides the REST API interface for the quant system.
 """
 
-from .main import (
-    create_app,
-    setup_routes,
-    setup_middleware
-)
+from .main import create_app
 
 __all__ = [
     'create_app',
-    'setup_routes',
-    'setup_middleware'
 ]
 
 # API version
