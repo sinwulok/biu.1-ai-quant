@@ -9,7 +9,7 @@
 
 ## 系統架構
 
-![系統架構圖](public/x-biu-ai-quant-full-mmd.png)
+![系統架構圖](public/design-v5.png)
 
 ---
 
@@ -69,38 +69,6 @@ frontend/
 │   │   ├── Portfolio.js
 │   │   └── TradeHistory.js
 └── package.json
-```
-
----
-
-## 快速開始
-
-### 1. 安裝 Python 依賴
-
-```bash
-pip install -r requirements.txt
-```
-
-> **可選依賴**（按需安裝）：
-> - IBKR：`pip install ib_insync` + 啟動 TWS / IB Gateway
-> - FUTU：`pip install futu-openapi` + 啟動 OpenD
-
-### 2. 啟動後端 API
-
-```bash
-cd backend/api
-python main.py
-# API 運行於 http://localhost:28000
-# Swagger 文件：http://localhost:28000/docs
-```
-
-### 3. 啟動前端
-
-```bash
-cd frontend
-npm install
-npm start
-# React 應用運行於 http://localhost:3000
 ```
 
 ---

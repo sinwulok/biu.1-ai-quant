@@ -1,73 +1,56 @@
 """
-ModelInferenceAgent – starter stub for AI-first inference.
+model_inference_agent.py — starter stub for the ModelInferenceAgent.
 
-STUB: implementation is intentionally minimal.  Replace the heuristic
-fallback with a real model call when a model is available.
+TODO: Replace the heuristic fallback with a real trained model.
 """
 
-import sys
-import os
-
-# Allow importing from the moved legacy package or from the repo root.
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-
-from legacy_rule_agents.base_agent import BaseAgent  # type: ignore
+from backend.legacy_rule_agents.base_agent import BaseAgent
 
 
 class ModelInferenceAgent(BaseAgent):
-    """AI-first agent that handles 'inference_request' messages.
+    """Stub agent that handles 'inference_request' messages.
 
-    When a trained model is not available it falls back to a simple
-    heuristic so the pipeline can still run end-to-end.
-
-    STUB – replace ``_model_predict`` with real model inference.
+    When a trained model is available it should be loaded in __init__ and
+    called from _run_inference.  Until then a simple heuristic fallback is
+    used so the rest of the system can be exercised end-to-end.
     """
 
-    def __init__(self, name: str = "model_inference_agent", model=None):
+    def __init__(self, name="model_inference_agent", model=None):
         super().__init__(name)
-        self.model = model  # set to a loaded model object when available
+        self.model = model  # inject a trained model here when ready
 
     # ------------------------------------------------------------------
-    # Message handling
+    # BaseAgent interface
     # ------------------------------------------------------------------
 
-    def receive_message(self, message: dict) -> None:
+    def receive_message(self, message):
         if message.get("type") == "inference_request":
             payload = message.get("payload", {})
             result = self._run_inference(payload)
             self.send_message(
-                message.get("sender", "coordinator"),
-                "inference_response",
-                result,
+                target=message.get("sender"),
+                message_type="inference_response",
+                payload=result,
             )
 
-    # ------------------------------------------------------------------
-    # Inference logic (stub)
-    # ------------------------------------------------------------------
-
-    def _run_inference(self, payload: dict) -> dict:
-        """Run model inference or fall back to heuristic."""
-        if self.model is not None:
-            return self._model_predict(payload)
-        return self._heuristic_fallback(payload)
-
-    def _model_predict(self, payload: dict) -> dict:
-        """Delegate to the attached model.  STUB – not yet implemented."""
-        raise NotImplementedError("Attach a model via self.model first.")
-
-    def _heuristic_fallback(self, payload: dict) -> dict:
-        """Simple heuristic used when no model is loaded."""
-        return {
-            "signal": "hold",
-            "confidence": 0.0,
-            "source": "heuristic_fallback",
-            "input": payload,
-        }
-
-    # ------------------------------------------------------------------
-    # Thread run loop (stub – override for continuous inference)
-    # ------------------------------------------------------------------
-
-    def run(self) -> None:
-        """Background loop placeholder.  STUB."""
+    def run(self):
+        # This agent is purely reactive (message-driven); nothing to poll.
         pass
+
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
+
+    def _run_inference(self, payload):
+        """Return an inference result dict for *payload*.
+
+        Uses the injected model when available; falls back to a simple
+        heuristic (hold) otherwise.
+        """
+        if self.model is not None:
+            # TODO: adapt to your model's actual input/output contract
+            raw = self.model.predict(payload)
+            return {"signal": raw, "source": "model"}
+
+        # Heuristic fallback — always recommend 'hold'
+        return {"signal": "hold", "source": "heuristic_fallback"}

@@ -1,7 +1,6 @@
 """
-AI-first agents package.
+ai_agents — new AI-first agents package.
 
-This package contains model-driven agents that replace the legacy rule-based
-agents previously located in backend/agents (now archived as
-backend/legacy_rule_agents).
+This package replaces the legacy rule-based agents in backend/legacy_rule_agents
+with model-driven agents that use machine-learning inference for trading decisions.
 """
