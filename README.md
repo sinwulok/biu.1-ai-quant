@@ -9,7 +9,7 @@
 
 ## 系統架構
 
-![系統架構圖](public/x-biu-ai-quant-full-mmd.png)
+![系統架構圖](public/design-v5.png)
 
 ---
 
